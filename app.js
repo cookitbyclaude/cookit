@@ -304,7 +304,7 @@ Antworte NUR mit validem JSON, ohne Markdown, ohne Codeblock, ohne Erklärung, i
         .cookit-back:active { opacity: 0.5; }
 
         .cookit-brand { display: flex; align-items: center; gap: 8px; }
-        .cookit-brand-icon { width: 26px; height: 26px; border-radius: 8px; background: var(--orange); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .cookit-brand-icon { width: 26px; height: 26px; border-radius: 8px; background: var(--orange); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: white; }
         .cookit-brand-name { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
 
         .cookit-h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; margin: 6px 0 4px; }
@@ -322,7 +322,7 @@ Antworte NUR mit validem JSON, ohne Markdown, ohne Codeblock, ohne Erklärung, i
         .cookit-input { flex: 1; border: 1.5px solid var(--border); background: var(--bg-subtle); border-radius: 14px; padding: 13px 16px; font-size: 16px; font-family: var(--font); color: var(--black); outline: none; transition: border-color 0.15s ease, background 0.15s ease; }
         .cookit-input:focus { border-color: var(--orange); background: var(--bg); }
         .cookit-input::placeholder { color: #A9A9AE; }
-        .cookit-add-btn { width: 46px; height: 46px; border-radius: 14px; background: var(--black); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: transform 0.1s ease, opacity 0.15s ease; }
+        .cookit-add-btn { width: 46px; height: 46px; border-radius: 14px; background: var(--black); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: transform 0.1s ease, opacity 0.15s ease; color: white; }
         .cookit-add-btn:active { transform: scale(0.92); }
         .cookit-add-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
@@ -362,11 +362,278 @@ Antworte NUR mit validem JSON, ohne Markdown, ohne Codeblock, ohne Erklärung, i
         @keyframes cookit-bounce { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
         .cookit-loading-text { font-size: 16px; font-weight: 600; color: var(--text-secondary); }
 
-        .cookit-section-label { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; margin: 4px 0 14px; }
-        .cookit-list-label { font-size: 13.5px; font-weight: 600; color: var(--text-secondary); margin: 22px 0 4px; }
-
-        .cookit-featured-tag { font-size: 12.5px; font-weight: 600; color: var(--orange); margin: 6px 0 10px; }
         .cookit-featured-card { text-align: left; width: 100%; border: none; border-radius: 22px; padding: 20px; background: linear-gradient(155deg, #171717, var(--black)); cursor: pointer; transition: transform 0.1s ease; font-family: var(--font); }
         .cookit-featured-card:active { transform: scale(0.98); }
         .cookit-featured-title { font-size: 20px; font-weight: 700; color: white; margin: 0 0 6px; letter-spacing: -0.01em; }
-        .cookit-featured-desc { font-size: 14px; color: rgba(
+        .cookit-featured-desc { font-size: 14px; color: rgba(255,255,255,0.7); margin: 0 0 16px; line-height: 1.35; }
+        .cookit-featured-meta { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 600; }
+
+        .cookit-card { text-align: left; width: 100%; border: 1.5px solid var(--border); border-radius: 18px; padding: 16px; background: var(--bg); cursor: pointer; margin-bottom: 10px; transition: transform 0.1s ease, border-color 0.15s ease; font-family: var(--font); }
+        .cookit-card:active { transform: scale(0.98); border-color: var(--orange); }
+        .cookit-card-title { font-size: 16.5px; font-weight: 700; margin: 0 0 4px; }
+        .cookit-card-desc { font-size: 13.5px; color: var(--text-secondary); margin: 0 0 12px; line-height: 1.35; }
+        .cookit-card-meta { display: flex; align-items: center; gap: 12px; font-size: 12.5px; font-weight: 600; color: var(--black); }
+
+        .cookit-diff { display: inline-flex; align-items: flex-end; gap: 2px; margin-right: 4px; }
+        .cookit-diff-bar { width: 3px; background: #D1D1D6; border-radius: 1px; }
+        .cookit-diff-bar.filled { background: var(--orange); }
+
+        .cookit-ing-box { background: var(--bg-subtle); border-radius: 18px; padding: 16px; margin-bottom: 20px; }
+        .cookit-ing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+        .cookit-ing-item { display: flex; flex-direction: column; }
+        .cookit-ing-name { font-size: 14px; font-weight: 600; }
+        .cookit-ing-amount { font-size: 13px; color: var(--text-secondary); }
+
+        .cookit-step { display: flex; gap: 14px; padding: 16px; border: 1.5px solid var(--border); border-radius: 18px; background: var(--bg); margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s ease, opacity 0.2s ease; }
+        .cookit-step.done { opacity: 0.5; border-color: transparent; background: var(--bg-subtle); }
+        .cookit-step-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+        .cookit-step.done .cookit-step-check { background: var(--orange); border-color: var(--orange); color: white; }
+        .cookit-step-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
+        .cookit-step.done .cookit-step-title { text-decoration: line-through; }
+        .cookit-step-text { font-size: 14px; color: var(--text-secondary); margin: 0; line-height: 1.4; }
+
+        .cookit-progress { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 10px; }
+        .cookit-progress-bar { height: 100%; background: var(--orange); transition: width 0.3s ease; }
+      `}</style>
+
+      <div className="cookit-shell">
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          style={{ display: "none" }}
+          onChange={handlePhotoChange}
+        />
+
+        {screen === "input" && (
+          <div className="cookit-page">
+            <div className="cookit-page-top">
+              <div className="cookit-topbar">
+                <div className="cookit-brand">
+                  <div className="cookit-brand-icon"><UtensilsCrossed /></div>
+                  <span className="cookit-brand-name">CookIt</span>
+                </div>
+              </div>
+              <h1 className="cookit-h1">Was hast du da?</h1>
+              <p className="cookit-sub">Gib deine Zutaten ein oder mache ein Foto von deinen Vorräten.</p>
+
+              <div className="cookit-servings-row">
+                <span className="cookit-servings-label">Portionen</span>
+                <div className="cookit-stepper">
+                  <button className="cookit-stepper-btn" onClick={decServings} disabled={servings <= 1}><Minus /></button>
+                  <span className="cookit-stepper-count">{servings}</span>
+                  <button className="cookit-stepper-btn" onClick={incServings} disabled={servings >= 12}><Plus /></button>
+                </div>
+              </div>
+
+              <div className="cookit-input-row">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="cookit-input"
+                  placeholder="Zutat eingeben..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+                <button className="cookit-add-btn" onClick={addIngredient} disabled={!inputValue.trim()}><Plus /></button>
+              </div>
+
+              <div className="cookit-action-row">
+                <button className="cookit-action-btn" onClick={triggerPhotoInput} disabled={photoState === "loading"}>
+                  {photoState === "loading" ? <Loader2 className="cookit-spin" /> : <Camera />} Foto scannen
+                </button>
+                <button
+                  className={`cookit-action-btn${voiceState === "listening" ? " listening" : ""}`}
+                  onClick={startVoiceInput}
+                >
+                  {voiceState === "listening" ? <Loader2 className="cookit-spin" /> : <Mic />} Sprache
+                </button>
+              </div>
+
+              {photoState === "empty" && <div className="cookit-inline-note">Keine Zutaten auf dem Foto erkannt.</div>}
+              {photoState === "error" && <div className="cookit-inline-note">Foto konnte nicht analysiert werden.</div>}
+              {voiceState === "unsupported" && <div className="cookit-inline-note">Spracherkennung wird nicht unterstützt.</div>}
+              {voiceState === "error" && <div className="cookit-inline-note">Fehler bei der Spracherkennung.</div>}
+
+              {availableSuggestions.length > 0 && (
+                <div>
+                  <div className="cookit-mini-label">Schnell auswählen</div>
+                  <div className="cookit-suggest-row">
+                    {availableSuggestions.map((item) => (
+                      <button key={item} className="cookit-suggest-chip" onClick={() => addSuggested(item)}>
+                        + {item}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="cookit-mini-label" style={{ marginTop: 18 }}>
+                Eingegebene Zutaten ({ingredients.length})
+              </div>
+            </div>
+
+            <div className="cookit-page-scroll">
+              {ingredients.length === 0 ? (
+                <div style={{ color: "var(--text-secondary)", fontSize: 14, paddingTop: 10 }}>
+                  Noch keine Zutaten hinzugefügt.
+                </div>
+              ) : (
+                <div className="cookit-chips">
+                  {ingredients.map((ing, idx) => (
+                    <div key={idx} className="cookit-chip">
+                      <span>{ing}</span>
+                      <button onClick={() => removeIngredient(idx)}><X /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="cookit-page-footer">
+              <button className="cookit-cta" onClick={findRecipes} disabled={ingredients.length === 0}>
+                Rezepte vorschlagen
+              </button>
+            </div>
+          </div>
+        )}
+
+        {screen === "loading-recipes" && (
+          <div className="cookit-loading">
+            <div className="cookit-dots">
+              <div className="cookit-dot" />
+              <div className="cookit-dot" />
+              <div className="cookit-dot" />
+            </div>
+            <div className="cookit-loading-text">Suche passende Rezepte...</div>
+          </div>
+        )}
+
+        {screen === "options" && (
+          <div className="cookit-page">
+            <div className="cookit-page-top">
+              <div className="cookit-topbar">
+                <button className="cookit-back" onClick={() => setScreen("input")}>
+                  <ChevronLeft /> Zutaten
+                </button>
+              </div>
+              <h1 className="cookit-h1">Vorgeschlagene Gerichte</h1>
+              <p className="cookit-sub">Wähle ein Rezept, das du kochen möchtest.</p>
+            </div>
+
+            <div className="cookit-page-scroll" style={{ paddingTop: 14 }}>
+              {featured && (
+                <div>
+                  <div className="cookit-featured-tag">★ Top Empfehlung</div>
+                  <button className="cookit-featured-card" onClick={() => selectRecipe(featured)}>
+                    <div className="cookit-featured-title">{featured.title}</div>
+                    <div className="cookit-featured-desc">{featured.description}</div>
+                    <div className="cookit-featured-meta">
+                      <span><Clock /> {featured.time}</span>
+                      <span><DifficultyBars level={featured.difficulty} /> {featured.difficulty}</span>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {others.length > 0 && (
+                <div>
+                  <div className="cookit-list-label">Weitere Optionen</div>
+                  {others.map((r) => (
+                    <button key={r.id} className="cookit-card" onClick={() => selectRecipe(r)}>
+                      <div className="cookit-card-title">{r.title}</div>
+                      <div className="cookit-card-desc">{r.description}</div>
+                      <div className="cookit-card-meta">
+                        <span><Clock /> {r.time}</span>
+                        <span><DifficultyBars level={r.difficulty} /> {r.difficulty}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {screen === "loading-detail" && (
+          <div className="cookit-loading">
+            <div className="cookit-dots">
+              <div className="cookit-dot" />
+              <div className="cookit-dot" />
+              <div className="cookit-dot" />
+            </div>
+            <div className="cookit-loading-text">Erstelle Schritt-für-Schritt Anleitung...</div>
+          </div>
+        )}
+
+        {screen === "detail" && detail && (
+          <div className="cookit-page">
+            <div className="cookit-page-top">
+              <div className="cookit-topbar">
+                <button className="cookit-back" onClick={() => setScreen("options")}>
+                  <ChevronLeft /> Rezepte
+                </button>
+              </div>
+              <h1 className="cookit-h1">{detail.title}</h1>
+              <p className="cookit-sub">{detail.time} • {detail.difficulty} • {servings} Portion(en)</p>
+              <div className="cookit-progress">
+                <div className="cookit-progress-bar" style={{ width: `${progressPct}%` }} />
+              </div>
+            </div>
+
+            <div className="cookit-page-scroll" style={{ paddingTop: 14 }}>
+              <div className="cookit-ing-box">
+                <div style={{ fontWeight: 700, marginBottom: 10, fontSize: 15 }}>Zutaten</div>
+                <div className="cookit-ing-grid">
+                  {detail.ingredients.map((ing, i) => (
+                    <div key={i} className="cookit-ing-item">
+                      <span className="cookit-ing-name">{ing.name}</span>
+                      <span className="cookit-ing-amount">{ing.amount}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ fontWeight: 700, marginBottom: 10, fontSize: 15 }}>Zubereitung</div>
+              {detail.steps.map((step, idx) => {
+                const isDone = !!doneSteps[idx];
+                return (
+                  <div key={idx} className={`cookit-step${isDone ? " done" : ""}`} onClick={() => toggleStep(idx)}>
+                    <div className="cookit-step-check">{isDone && <Check />}</div>
+                    <div>
+                      <div className="cookit-step-title">{idx + 1}. {step.title}</div>
+                      <p className="cookit-step-text">{step.content}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="cookit-page-footer">
+              <button className="cookit-ghost-btn" onClick={resetAll}>Neues Gericht kochen</button>
+            </div>
+          </div>
+        )}
+
+        {screen === "error" && (
+          <div className="cookit-page">
+            <div className="cookit-loading">
+              <AlertCircle style={{ width: 40, height: 40, color: "var(--orange)" }} />
+              <div className="cookit-h1" style={{ fontSize: 20 }}>Fehler aufgetreten</div>
+              <p className="cookit-sub">Beim Laden der Daten gab es ein Problem. Bitte versuche es erneut.</p>
+              <button className="cookit-ghost-btn" onClick={() => setScreen(errorFrom)} style={{ marginTop: 10 }}>
+                Zurück
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// React App im Root-Element rendern
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<CookIt />);
