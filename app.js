@@ -1,5 +1,18 @@
-import { useState, useRef } from "react";
-import { ChevronLeft, ChevronRight, X, Plus, Clock, Check, AlertCircle, Camera, Mic, Loader2, UtensilsCrossed, Minus } from "lucide-react";
+const { useState, useRef } = React;
+
+// Lucide Icons aus dem Browser-Objekt holen
+const ChevronLeft = () => <i data-lucide="chevron-left"></i>;
+const ChevronRight = () => <i data-lucide="chevron-right"></i>;
+const X = () => <i data-lucide="x"></i>;
+const Plus = () => <i data-lucide="plus"></i>;
+const Clock = () => <i data-lucide="clock"></i>;
+const Check = () => <i data-lucide="check"></i>;
+const AlertCircle = () => <i data-lucide="alert-circle"></i>;
+const Camera = () => <i data-lucide="camera"></i>;
+const Mic = () => <i data-lucide="mic"></i>;
+const Loader2 = () => <i data-lucide="loader-2"></i>;
+const UtensilsCrossed = () => <i data-lucide="utensils-crossed"></i>;
+const Minus = () => <i data-lucide="minus"></i>;
 
 const MODEL = "claude-sonnet-4-6";
 const SUGGESTIONS = ["Ei", "Nudeln", "Reis", "Kartoffeln", "Zwiebel", "Knoblauch", "Tomaten", "Paprika", "Karotten", "Champignons", "Käse", "Milch", "Hähnchen", "Hackfleisch", "Speck", "Butter"];
@@ -76,7 +89,7 @@ function DifficultyBars({ level }) {
   );
 }
 
-export default function CookIt() {
+function CookIt() {
   const [screen, setScreen] = useState("input");
   const [ingredients, setIngredients] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -89,6 +102,12 @@ export default function CookIt() {
   const [voiceState, setVoiceState] = useState("idle");
   const inputRef = useRef(null);
   const photoInputRef = useRef(null);
+
+  React.useEffect(() => {
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }, [screen, recipes, detail, ingredients, photoState, voiceState]);
 
   function commitIngredients(names) {
     setIngredients((prev) => {
@@ -350,10 +369,4 @@ Antworte NUR mit validem JSON, ohne Markdown, ohne Codeblock, ohne Erklärung, i
         .cookit-featured-card { text-align: left; width: 100%; border: none; border-radius: 22px; padding: 20px; background: linear-gradient(155deg, #171717, var(--black)); cursor: pointer; transition: transform 0.1s ease; font-family: var(--font); }
         .cookit-featured-card:active { transform: scale(0.98); }
         .cookit-featured-title { font-size: 20px; font-weight: 700; color: white; margin: 0 0 6px; letter-spacing: -0.01em; }
-        .cookit-featured-desc { font-size: 14px; color: rgba(255,255,255,0.65); margin: 0 0 16px; line-height: 1.4; }
-        .cookit-featured-badges { display: flex; gap: 8px; flex-wrap: wrap; }
-        .cookit-featured-badge { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.12); border-radius: 100px; padding: 6px 12px; font-size: 12.5px; font-weight: 600; color: white; }
-
-        .cookit-list-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; padding: 14px 2px; border: none; border-bottom: 1px solid var(--border); background: none; cursor: pointer; font-family: var(--font); }
-        .cookit-list-row:last-child { border-bottom: none; }
-        .coo
+        .cookit-featured-desc { font-size: 14px; color: rgba(
