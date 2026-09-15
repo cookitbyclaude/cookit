@@ -4,12 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CookIt</title>
-  <!-- Tailwind CSS fürs Styling -->
-  <script src="https://cdn.tailwindcss.com"></script>
   <!-- React & ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Babel zum Übersetzen von JSX direkt im Browser -->
+  <!-- Babel zum Ausführen von JSX im Browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -17,20 +15,353 @@
 <body class="bg-gray-100">
   <div id="root"></div>
 
-  <!-- Nimmt deine CookIt.jsx und führt sie aus -->
   <script type="text/babel">
-    // Mocks für React Hooks und Lucide Icons, damit dein Import-Code im Browser nicht abstürzt
-    const { useState, useEffect, useRef } = React;
-    
-    // Lucide Icons Mock-Objekt für den Browser
-    const LucideIcons = window.lucide || {};
-    const ChevronLeft = LucideIcons.ChevronLeft || (() => null);
-    const ChevronRight = LucideIcons.ChevronRight || (() => null);
-    const X = LucideIcons.X || (() => null);
-    const Plus = LucideIcons.Plus || (() => null);
-  </script>
+    const { useState, useRef } = React;
 
-  <!-- Lädt deine JSX-Datei -->
-  <script type="text/babel" src="CookIt.jsx"></script>
-</body>
-</html>
+    // Icons aus der globalen Lucide-Bibliothek laden
+    const createIcon = (name) => (props) => {
+      const elRef = useRef(null);
+      React.useEffect(() => {
+        if (elRef.current && window.lucide) {
+          window.lucide.createIcons();
+        }
+      }, [props]);
+      return <i ref={elRef} data-lucide={name} className={props.className} style={{ display: 'inline-flex', verticalAlign: 'middle', width: props.size || 24, height: props.size || 24, ...props.style }}></i>;
+    };
+
+    const ChevronLeft = createIcon('chevron-left');
+    const ChevronRight = createIcon('chevron-right');
+    const X = createIcon('x');
+    const Plus = createIcon('plus');
+    const Clock = createIcon('clock');
+    const Check = createIcon('check');
+    const Users = createIcon('users');
+    const AlertCircle = createIcon('alert-circle');
+    const Camera = createIcon('camera');
+    const Mic = createIcon('mic');
+    const Loader2 = createIcon('loader-2');
+    const UtensilsCrossed = createIcon('utensils-crossed');
+
+    const MODEL = "claude-sonnet-4-6";
+    const SUGGESTIONS = ["Ei", "Nudeln", "Reis", "Kartoffeln", "Zwiebel", "Knoblauch", "Tomaten", "Paprika", "Karotten", "Champignons", "Käse", "Milch", "Hähnchen", "Hackfleisch", "Speck", "Butter"];
+    const DIFF_LEVEL = { Einfach: 1, Mittel: 2, Anspruchsvoll: 3 };
+
+    async function askClaude(prompt) {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      if (!response.ok) throw new Error("network");
+      const data = await response.json();
+      const text = (data.content || [])
+        .map((block) => (block.type === "text" ? block.text : ""))
+        .join("\n");
+      const cleaned = text.replace(/```json|```/g, "").trim();
+      const match = cleaned.match(/[\[{][\s\S]*[\]}]/);
+      return JSON.parse(match ? match[0] : cleaned);
+    }
+
+    async function askClaudeVision(base64Data, mediaType, prompt) {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 1000,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "image", source: { type: "base64", media_type: mediaType, data: base64Data } },
+                { type: "text", text: prompt },
+              ],
+            },
+          ],
+        }),
+      });
+      if (!response.ok) throw new Error("network");
+      const data = await response.json();
+      const text = (data.content || [])
+        .map((block) => (block.type === "text" ? block.text : ""))
+        .join("\n");
+      const cleaned = text.replace(/```json|```/g, "").trim();
+      const match = cleaned.match(/\[[\s\S]*\]/);
+      return JSON.parse(match ? match[0] : cleaned);
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",")[1]);
+        reader.onerror = () => reject(new Error("read failed"));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function DifficultyBars({ level }) {
+      const filled = DIFF_LEVEL[level] || 1;
+      return (
+        <span className="cookit-diff">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className={`cookit-diff-bar${i < filled ? " filled" : ""}`} style={{ height: 5 + i * 3 }} />
+          ))}
+        </span>
+      );
+    }
+
+    function CookIt() {
+      const [screen, setScreen] = useState("input");
+      const [ingredients, setIngredients] = useState([]);
+      const [inputValue, setInputValue] = useState("");
+      const [recipes, setRecipes] = useState([]);
+      const [detail, setDetail] = useState(null);
+      const [doneSteps, setDoneSteps] = useState({});
+      const [errorFrom, setErrorFrom] = useState("input");
+      const [photoState, setPhotoState] = useState("idle");
+      const [voiceState, setVoiceState] = useState("idle");
+      const inputRef = useRef(null);
+      const photoInputRef = useRef(null);
+
+      function commitIngredients(names) {
+        setIngredients((prev) => {
+          const existing = new Set(prev.map((p) => p.toLowerCase()));
+          const fresh = names.filter((n) => n && !existing.has(String(n).toLowerCase()));
+          return [...prev, ...fresh];
+        });
+      }
+
+      function addIngredient() {
+        const parts = inputValue.split(",").map((p) => p.trim()).filter(Boolean);
+        if (parts.length === 0) return;
+        commitIngredients(parts);
+        setInputValue("");
+        inputRef.current?.focus();
+      }
+
+      function addSuggested(name) {
+        commitIngredients([name]);
+      }
+
+      function removeIngredient(idx) {
+        setIngredients((prev) => prev.filter((_, i) => i !== idx));
+      }
+
+      function handleKeyDown(e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          addIngredient();
+        }
+      }
+
+      function triggerPhotoInput() {
+        photoInputRef.current?.click();
+      }
+
+      async function handlePhotoChange(e) {
+        const file = e.target.files && e.target.files[0];
+        e.target.value = "";
+        if (!file) return;
+        setPhotoState("loading");
+        try {
+          const base64 = await fileToBase64(file);
+          const prompt = 'Schau dir dieses Foto an und identifiziere alle sichtbaren Lebensmittel-Zutaten. Antworte NUR mit einem validen JSON-Array aus kurzen deutschen Zutat-Bezeichnungen, ohne Markdown, ohne Codeblock, ohne Erklärung. Beispiel: ["Tomate","Zwiebel","Ei"]. Falls keine Zutaten erkennbar sind, antworte mit [].';
+          const result = await askClaudeVision(base64, file.type || "image/jpeg", prompt);
+          if (Array.isArray(result) && result.length > 0) {
+            commitIngredients(result);
+            setPhotoState("idle");
+          } else {
+            setPhotoState("empty");
+          }
+        } catch (err) {
+          setPhotoState("error");
+        }
+      }
+
+      function startVoiceInput() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          setVoiceState("unsupported");
+          return;
+        }
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.lang = "de-DE";
+          recognition.interimResults = false;
+          recognition.maxAlternatives = 1;
+          recognition.onstart = () => setVoiceState("listening");
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const parts = transcript.split(/,| und /gi).map((p) => p.trim()).filter(Boolean);
+            if (parts.length) commitIngredients(parts);
+            setVoiceState("idle");
+          };
+          recognition.onerror = () => setVoiceState("error");
+          recognition.onend = () => setVoiceState((s) => (s === "listening" ? "idle" : s));
+          recognition.start();
+        } catch (err) {
+          setVoiceState("error");
+        }
+      }
+
+      async function findRecipes() {
+        setScreen("loading-recipes");
+        try {
+          const prompt = `Du bist ein Koch-Assistent. Ein Nutzer hat folgende Zutaten zur Verfügung: ${ingredients.join(
+            ", "
+          )}. Grundzutaten wie Salz, Pfeffer, Öl, Wasser, Zucker darfst du zusätzlich voraussetzen. Schlage genau 4 unterschiedliche, alltagstaugliche Gerichte vor, sortiert vom am besten passenden zum am wenigsten passenden. Antworte NUR mit einem validen JSON-Array, ohne Markdown, ohne Codeblock, ohne Erklärung, in exakt diesem Format: [{"id":"1","title":"Gerichtname","description":"kurze, konkrete Beschreibung, max. 10 Wörter","time":"z.B. 20 Min.","difficulty":"Einfach","servings":"2 Portionen"}]. Die difficulty ist immer eines von: Einfach, Mittel, Anspruchsvoll.`;
+          const result = await askClaude(prompt);
+          if (!Array.isArray(result) || result.length === 0) throw new Error("empty");
+          setRecipes(result);
+          setScreen("options");
+        } catch (e) {
+          setErrorFrom("input");
+          setScreen("error");
+        }
+      }
+
+      async function selectRecipe(recipe) {
+        setScreen("loading-detail");
+        try {
+          const prompt = `Erstelle eine Kochanleitung für "${recipe.title}" (${recipe.description}). Verfügbare Zutaten: ${ingredients.join(
+            ", "
+          )}. Grundzutaten wie Salz, Pfeffer, Öl, Wasser, Zucker darfst du zusätzlich voraussetzen. Antworte NUR mit validem JSON, ohne Markdown, ohne Codeblock, ohne Erklärung, in exakt diesem Format: {"title":"${recipe.title}","time":"${recipe.time}","difficulty":"${recipe.difficulty}","servings":"${recipe.servings}","ingredients":[{"name":"Zutat","amount":"Menge"}],"steps":[{"title":"kurzer Schritt-Titel","content":"konkrete, knappe Anweisung, 1-2 Sätze"}]}. Erstelle 4 bis 7 Schritte.`;
+          const result = await askClaude(prompt);
+          if (!result || !Array.isArray(result.steps)) throw new Error("empty");
+          setDetail(result);
+          setDoneSteps({});
+          setScreen("detail");
+        } catch (e) {
+          setErrorFrom("options");
+          setScreen("error");
+        }
+      }
+
+      function toggleStep(idx) {
+        setDoneSteps((prev) => ({ ...prev, [idx]: !prev[idx] }));
+      }
+
+      function resetAll() {
+        setIngredients([]);
+        setInputValue("");
+        setRecipes([]);
+        setDetail(null);
+        setDoneSteps({});
+        setPhotoState("idle");
+        setVoiceState("idle");
+        setScreen("input");
+      }
+
+      const availableSuggestions = SUGGESTIONS.filter(
+        (s) => !ingredients.some((i) => i.toLowerCase() === s.toLowerCase())
+      );
+
+      const featured = recipes[0];
+      const others = recipes.slice(1);
+      const doneCount = detail ? Object.values(doneSteps).filter(Boolean).length : 0;
+      const totalSteps = detail?.steps?.length || 0;
+      const progressPct = totalSteps ? Math.round((doneCount / totalSteps) * 100) : 0;
+
+      return (
+        <div className="cookit-app">
+          <style>{`
+            .cookit-app {
+              --bg: #FFFFFF;
+              --bg-subtle: #F5F5F7;
+              --black: #0A0A0A;
+              --text-secondary: #6E6E73;
+              --orange: #FF5A1F;
+              --orange-dark: #E14A10;
+              --orange-light: #FF6B36;
+              --orange-tint: #FFF1E8;
+              --border: #E7E7EA;
+              --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+
+              font-family: var(--font);
+              background: var(--bg-subtle);
+              min-height: 100vh;
+              display: flex;
+              justify-content: center;
+              box-sizing: border-box;
+              color: var(--black);
+              -webkit-font-smoothing: antialiased;
+            }
+            .cookit-app *, .cookit-app *::before, .cookit-app *::after { box-sizing: border-box; }
+            .cookit-shell { width: 100%; max-width: 460px; background: var(--bg); min-height: 100vh; display: flex; flex-direction: column; }
+            .cookit-screen { flex: 1; padding: 24px 22px 32px; animation: cookit-fade 0.32s ease both; display: flex; flex-direction: column; }
+            @keyframes cookit-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+            @media (prefers-reduced-motion: reduce) { .cookit-screen, .cookit-chip { animation: none !important; } }
+
+            .cookit-topbar { display: flex; align-items: center; min-height: 32px; margin-bottom: 18px; }
+            .cookit-back { display: flex; align-items: center; gap: 2px; background: none; border: none; color: var(--orange); font-size: 16px; font-weight: 600; font-family: var(--font); cursor: pointer; padding: 6px 4px 6px 0; margin-left: -4px; }
+            .cookit-back:active { opacity: 0.5; }
+
+            .cookit-brand { display: flex; align-items: center; gap: 8px; }
+            .cookit-brand-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--orange); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+            .cookit-brand-name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+
+            .cookit-hero { margin: 4px 0 26px; }
+            .cookit-h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; margin: 0 0 9px; }
+            .cookit-sub { font-size: 16px; color: var(--text-secondary); line-height: 1.45; margin: 0; max-width: 32ch; }
+
+            .cookit-input-row { display: flex; gap: 8px; margin-top: 24px; }
+            .cookit-input { flex: 1; border: 1.5px solid var(--border); background: var(--bg-subtle); border-radius: 14px; padding: 14px 16px; font-size: 16px; font-family: var(--font); color: var(--black); outline: none; transition: border-color 0.15s ease, background 0.15s ease; }
+            .cookit-input:focus { border-color: var(--orange); background: var(--bg); }
+            .cookit-input::placeholder { color: #A9A9AE; }
+            .cookit-add-btn { width: 48px; height: 48px; border-radius: 14px; background: var(--black); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: transform 0.1s ease, opacity 0.15s ease; }
+            .cookit-add-btn:active { transform: scale(0.92); }
+            .cookit-add-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+            .cookit-action-row { display: flex; gap: 10px; margin-top: 10px; }
+            .cookit-action-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1.5px solid var(--border); background: var(--bg); border-radius: 14px; padding: 12px; font-size: 14px; font-weight: 600; color: var(--black); cursor: pointer; font-family: var(--font); transition: border-color 0.15s ease, transform 0.1s ease, background 0.15s ease; }
+            .cookit-action-btn:active { transform: scale(0.97); }
+            .cookit-action-btn.listening { border-color: var(--orange); background: var(--orange-tint); color: var(--orange-dark); }
+            .cookit-action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+            .cookit-inline-note { font-size: 13px; color: var(--text-secondary); margin: 10px 2px 0; }
+            .cookit-spin { animation: cookit-spin 0.9s linear infinite; }
+            @keyframes cookit-spin { to { transform: rotate(360deg); } }
+
+            .cookit-mini-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 22px 0 10px; }
+            .cookit-suggest-row { display: flex; flex-wrap: wrap; gap: 8px; }
+            .cookit-suggest-chip { background: var(--bg); border: 1.5px solid var(--border); border-radius: 100px; padding: 7px 14px; font-size: 13.5px; font-weight: 600; color: var(--black); cursor: pointer; transition: border-color 0.15s ease, transform 0.1s ease; }
+            .cookit-suggest-chip:active { transform: scale(0.94); border-color: var(--orange); }
+
+            .cookit-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+            .cookit-chip { display: flex; align-items: center; gap: 6px; background: var(--orange-tint); color: var(--orange-dark); border-radius: 100px; padding: 8px 8px 8px 14px; font-size: 14.5px; font-weight: 600; animation: cookit-pop 0.2s ease both; }
+            @keyframes cookit-pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+            .cookit-chip button { background: rgba(255,90,31,0.16); border: none; border-radius: 100px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--orange-dark); padding: 0; }
+            .cookit-chip button:active { opacity: 0.5; }
+
+            .cookit-spacer { flex: 1; min-height: 20px; }
+
+            .cookit-cta { width: 100%; border: none; border-radius: 16px; background: linear-gradient(180deg, var(--orange-light), var(--orange)); color: white; font-size: 17px; font-weight: 700; font-family: var(--font); padding: 17px; cursor: pointer; margin-top: 26px; box-shadow: 0 12px 22px rgba(255,90,31,0.32); transition: transform 0.1s ease, box-shadow 0.15s ease; }
+            .cookit-cta:active { transform: scale(0.98); box-shadow: 0 6px 14px rgba(255,90,31,0.28); }
+            .cookit-cta:disabled { background: var(--border); color: #A9A9AE; cursor: not-allowed; box-shadow: none; }
+
+            .cookit-ghost-btn { width: 100%; border: 1.5px solid var(--border); border-radius: 16px; background: var(--bg); color: var(--black); font-size: 16px; font-weight: 600; font-family: var(--font); padding: 15px; cursor: pointer; transition: transform 0.1s ease, border-color 0.15s ease; }
+            .cookit-ghost-btn:active { transform: scale(0.98); border-color: var(--black); }
+
+            .cookit-loading { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 40px; text-align: center; }
+            .cookit-dots { display: flex; gap: 9px; }
+            .cookit-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--orange); animation: cookit-bounce 0.9s ease-in-out infinite; }
+            .cookit-dot:nth-child(2) { animation-delay: 0.15s; }
+            .cookit-dot:nth-child(3) { animation-delay: 0.3s; }
+            @keyframes cookit-bounce { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+            .cookit-loading-text { font-size: 16px; font-weight: 600; color: var(--text-secondary); }
+
+            .cookit-section-label { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 16px; }
+            .cookit-list-label { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin: 28px 0 4px; }
+
+            .cookit-featured-tag { font-size: 13px; font-weight: 600; color: var(--orange); margin: 6px 0 10px; }
+            .cookit-featured-card { text-align: left; width: 100%; border: none; border-radius: 22px; padding: 22px; background: linear-gradient(155deg, #171717, var(--black)); cursor: pointer; transition: transform 0.1s ease; font-family: var(--font); }
+            .cookit-featured-card:active { transform: scale(0.98); }
+            .cookit-featured-title { font-size: 21px; font-weight: 700; color: white; margin: 0 0 6px; letter-spacing: -0.01em; }
+            .cookit-featured-desc { font-size: 14.5px; color: rgba(255,255,255,0.65); margin: 0 0 18px; line-height: 1.4; }
+            .cookit-featured-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+            .cookit-featured-badge { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.12); border-radius: 100px; padding: 6px 12px; font-size: 12.5px; font-weight: 600; color: white; }
+
+            .cookit-list-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 1
