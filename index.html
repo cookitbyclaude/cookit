@@ -4,17 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CookIt</title>
-  <!-- React & Babel laden, um JSX im Browser auszuführen -->
+  <!-- Tailwind CSS fürs Styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel zum Übersetzen von JSX direkt im Browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Tailwind CSS für das Styling -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
+<body class="bg-gray-100">
   <div id="root"></div>
 
-  <!-- Hier wird deine JSX-Datei geladen -->
+  <!-- Nimmt deine CookIt.jsx und führt sie aus -->
+  <script type="text/babel">
+    // Mocks für React Hooks und Lucide Icons, damit dein Import-Code im Browser nicht abstürzt
+    const { useState, useEffect, useRef } = React;
+    
+    // Lucide Icons Mock-Objekt für den Browser
+    const LucideIcons = window.lucide || {};
+    const ChevronLeft = LucideIcons.ChevronLeft || (() => null);
+    const ChevronRight = LucideIcons.ChevronRight || (() => null);
+    const X = LucideIcons.X || (() => null);
+    const Plus = LucideIcons.Plus || (() => null);
+  </script>
+
+  <!-- Lädt deine JSX-Datei -->
   <script type="text/babel" src="CookIt.jsx"></script>
 </body>
 </html>
